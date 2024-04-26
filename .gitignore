@@ -2,3 +2,4 @@
 **/openai.yaml
 **/huggingface.yaml
 */__pycache__
+.env

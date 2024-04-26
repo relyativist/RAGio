@@ -13,7 +13,7 @@ from backend.semantic_search import retrieve
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-TOP_K = int(os.environ("TOP_K", 4))
+TOP_K = int(os.getenv("TOP_K", 4))
 
 #proj_dir = Path(__file__).parent
 env = Environment(loader=FileSystemLoader('./templates'))

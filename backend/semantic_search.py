@@ -13,13 +13,13 @@ db = lancedb.connect(".lancedb")
 
 #config = set_config("configs/openai.yaml")
 
-TABLE = db.open_table(os.environ("TABLE_NAME"))
-VECTOR_COLUMN = os.environ("VECTOR_COLUMN", "vector")
-TEXT_COLUMN = os.environ("TEXT_COLUMN", "text")
-BATCH_SIZE = int(os.environ("BATCH_SIZE", 32))
+TABLE = db.open_table(os.getenv("TABLE_NAME"))
+VECTOR_COLUMN = os.getenv("VECTOR_COLUMN", "vector")
+TEXT_COLUMN = os.getenv("TEXT_COLUMN", "text")
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", 32))
 
-retriever = SentenceTransformer(os.environ("EMB_MODEL"))
-reranker = CrossEncoder(os.environ("RERANK_MODEL"))
+retriever = SentenceTransformer(os.getenv("EMB_MODEL"))
+reranker = CrossEncoder(os.getenv("RERANK_MODEL"))
 
 
 def search(query, k = 25):
