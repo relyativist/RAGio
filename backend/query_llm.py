@@ -8,29 +8,29 @@ from huggingface_hub import InferenceClient
 from transformers import AutoTokenizer
 
 
-OPENAI_KEY = os.getenv("OPENAI_API_KEY")
-HF_TOKEN = os.getenv("HF_TOKEN")
-TOKENIZER = AutoTokenizer.from_pretrained(os.getenv("HF_MODEL"))
+OPENAI_KEY = os.environ("OPENAI_API_KEY")
+HF_TOKEN = os.environ("HF_TOKEN")
+TOKENIZER = AutoTokenizer.from_pretrained(os.environ("HF_MODEL"))
 
 HF_CLIENT = InferenceClient(
-    os.getenv("HF_MODEL"),
+    os.environ("HF_MODEL"),
     token=HF_TOKEN
 )
 OAI_CLIENT = openai.Client(api_key=OPENAI_KEY)
 
 HF_GENERATE_KWARGS = {
-    'temperature': max(float(os.getenv("TEMPERATURE", 0.9)), 1e-2),
-    'max_new_tokens': int(os.getenv("MAX_NEW_TOKENS", 256)),
-    'top_p': float(os.getenv("TOP_P", 0.6)),
-    'repetition_penalty': float(os.getenv("REP_PENALTY", 1.2)),
-    'do_sample': bool(os.getenv("DO_SAMPLE", True))
+    'temperature': max(float(os.environ("TEMPERATURE", 0.9)), 1e-2),
+    'max_new_tokens': int(os.environ("MAX_NEW_TOKENS", 256)),
+    'top_p': float(os.environ("TOP_P", 0.6)),
+    'repetition_penalty': float(os.environ("REP_PENALTY", 1.2)),
+    'do_sample': bool(os.environ("DO_SAMPLE", True))
 }
 
 OAI_GENERATE_KWARGS = {
-    'temperature': max(float(os.getenv("TEMPERATURE", 0.9)), 1e-2),
-    'max_tokens': int(os.getenv("MAX_NEW_TOKENS", 256)),
-    'top_p': float(os.getenv("TOP_P", 0.6)),
-    'frequency_penalty': max(-2, min(float(os.getenv("FREQ_PENALTY", 0)), 2))
+    'temperature': max(float(os.environ("TEMPERATURE", 0.9)), 1e-2),
+    'max_tokens': int(os.environ("MAX_NEW_TOKENS", 256)),
+    'top_p': float(os.environ("TOP_P", 0.6)),
+    'frequency_penalty': max(-2, min(float(os.environ("FREQ_PENALTY", 0)), 2))
 }
 
 def format_prompt(message: str, api_kind: str):
@@ -105,7 +105,7 @@ def generate_openai(prompt: str) -> Generator[str, None, str]:
     
     try:
         stream = OAI_CLIENT.chat.completions.create(
-            model=os.getenv("OPENAI_MODEL"),
+            model=os.environ("OPENAI_MODEL"),
             messages=formatted_prompt,
             **OAI_GENERATE_KWARGS,
             stream=True
