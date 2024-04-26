@@ -1,0 +1,6 @@
+*.pdf
+**/openai.yaml
+**/huggingface.yaml
+.env
+*/__pycache__
+.lancedb
