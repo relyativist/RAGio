@@ -5,12 +5,12 @@ import os
 from typing import Generator, List, Dict, Any
 
 from huggingface_hub import InferenceClient
-from transformers import AutoTokenizer
+#from transformers import AutoTokenizer
 
 
 OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
-TOKENIZER = AutoTokenizer.from_pretrained(os.getenv("HF_MODEL"))
+#TOKENIZER = AutoTokenizer.from_pretrained(os.getenv("HF_MODEL"))
 
 HF_CLIENT = InferenceClient(
     os.getenv("HF_MODEL"),
@@ -48,8 +48,8 @@ def format_prompt(message: str, api_kind: str):
 
     if api_kind == "openai":
         return messages
-    elif api_kind == "hf":
-        return TOKENIZER.apply_chat_template(messages, tokenize=False)
+#    elif api_kind == "hf":
+#        return TOKENIZER.apply_chat_template(messages, tokenize=False)
     else:
         raise ValueError("API is not supported")
 
