@@ -27,78 +27,103 @@ def add_text(history, text):
     return history, gr.Textbox(value="", interactive=False)
 
 
-def bot(history, api_kind, top_k : str = 3):
+def bot(history, vs_name, api_kind, top_k: int = 3):
     query = history[-1][0]
 
     if not query:
         raise gr.Warning("Please submit a non-empty string as a prompt")
 
-    logger.info('Retrieving documents...')
-    # Retrieve documents relevant to query
-    document_start = perf_counter()
+    logger.info("Retrieving documents...")
 
-    documents = retrieve(query, k = 25, rerank = True, top_k = top_k)
+    doc_start = perf_counter()
+    doc = retrieve(vs_name, query, k=25, rerank=True, top_k=top_k)
+    doc_time = perf_counter() - doc_start
+    logger.info(
+        f"Finished Retrieving documents in \
+        {round(doc_time, 2)} seconds..."
+    )
 
-    document_time = perf_counter() - document_start
-    logger.info(f'Finished Retrieving documents in {round(document_time, 2)} seconds...')
-   
     # Create Prompt
-    prompt = template.render(documents=documents, query=query, history=history)
-    prompt_html = template_html.render(documents=documents, query=query, history=history)
-    print(prompt, flush=True)
+    prompt = template.render(documents=doc, query=query, history=history)
+    prompt_html = template_html.render(documents=doc, query=query, history=history)
 
     if api_kind == "HuggingFace":
-         generate_fn = generate_hf
+        generate_fn = generate_hf
     elif api_kind == "OpenAI":
-         generate_fn = generate_openai
+        generate_fn = generate_openai
     else:
-         raise gr.Error(f"API {api_kind} is not supported")
+        raise gr.Error(f"API {api_kind} is not supported")
 
-    
     history[-1] = (history[-1][0], "")
 
     for character in generate_fn(prompt):
-        #history[-1][1] = character
         history[-1] = (history[-1][0], character)
         yield history, prompt_html
 
+
+def var_textbox(x):
+    return x
+
+
 with gr.Blocks() as demo:
+
+    vs_name_state = gr.State()
+
+    with gr.Row():
+        file_input = gr.File(type="filepath")
+        upload_btn = gr.Button(value="Upload file")
+
+    vs_name_output = gr.Textbox(label="Vector Store Name")
+
+    upload_btn.click(embedder, inputs=file_input, outputs=vs_name_output).then(
+        var_textbox, inputs=vs_name_output, outputs=vs_name_state
+    )
+
     chatbot = gr.Chatbot(
-            [],
-            elem_id="chatbot",
-            avatar_images=('https://aui.atlassian.com/aui/8.8/docs/images/avatar-person.svg',
-                           'https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.svg'),
-            bubble_full_width=False,
-            show_copy_button=True,
-            show_share_button=True,
-            )
+        [],
+        elem_id="chatbot",
+        avatar_images=(
+            "https://aui.atlassian.com/aui/8.8/docs/images/avatar-person.svg",
+            "https://huggingface.co/datasets/huggingface/brand-assets/resolve/main/hf-logo.svg",
+        ),
+        bubble_full_width=False,
+        show_copy_button=True,
+        show_share_button=True,
+    )
 
     with gr.Row():
         txt = gr.Textbox(
-                scale=3,
-                show_label=False,
-                placeholder="Enter text and press enter",
-                container=False,
-                )
+            scale=3,
+            show_label=False,
+            placeholder="Enter text and press enter",
+            container=False,
+        )
         txt_btn = gr.Button(value="Submit text", scale=1)
 
-    api_kind = gr.Radio(choices=["HuggingFace", "OpenAI"], value="HuggingFace")
-    api_topk = gr.Slider(minimum=1, maximum=5, value=3, step=1, label="Top-K")
+    api_kind_option = gr.Radio(choices=["HuggingFace", "OpenAI"], value="HuggingFace")
+    api_topk_slider = gr.Slider(minimum=1, maximum=5, value=3, step=1, label="Top-K")
 
     prompt_html = gr.HTML()
     # Turn off interactivity while generating if you click
     txt_msg = txt_btn.click(add_text, [chatbot, txt], [chatbot, txt], queue=False).then(
-            bot, [chatbot, api_kind, api_topk], [chatbot, prompt_html])
+        bot,
+        [chatbot, vs_name_state, api_kind_option, api_topk_slider],
+        [chatbot, prompt_html],
+    )
 
     # Turn it back on
     txt_msg.then(lambda: gr.Textbox(interactive=True), None, [txt], queue=False)
 
     # Turn off interactivity while generating if you hit enter
     txt_msg = txt.submit(add_text, [chatbot, txt], [chatbot, txt], queue=False).then(
-            bot, [chatbot, api_kind, api_topk], [chatbot, prompt_html])
+        bot,
+        [chatbot, vs_name_state, api_kind_option, api_topk_slider],
+        [chatbot, prompt_html],
+    )
 
     # Turn it back on
     txt_msg.then(lambda: gr.Textbox(interactive=True), None, [txt], queue=False)
+
 
 demo.queue()
 demo.launch(debug=True)
