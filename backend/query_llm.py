@@ -1,9 +1,11 @@
-import openai
-import gradio as gr
 import os
+from typing import Any
+from typing import Dict
+from typing import Generator
+from typing import List
 
-from typing import Generator, List, Dict, Any
-
+import gradio as gr
+import openai
 from huggingface_hub import InferenceClient
 from transformers import AutoTokenizer
 
@@ -12,26 +14,24 @@ OPENAI_KEY = os.getenv("OPENAI_API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 TOKENIZER = AutoTokenizer.from_pretrained(os.getenv("HF_MODEL"))
 
-HF_CLIENT = InferenceClient(
-    os.getenv("HF_MODEL"),
-    token=HF_TOKEN
-)
+HF_CLIENT = InferenceClient(os.getenv("HF_MODEL"), token=HF_TOKEN)
 OAI_CLIENT = openai.Client(api_key=OPENAI_KEY)
 
 HF_GENERATE_KWARGS = {
-    'temperature': max(float(os.getenv("TEMPERATURE", 0.9)), 1e-2),
-    'max_new_tokens': int(os.getenv("MAX_NEW_TOKENS", 256)),
-    'top_p': float(os.getenv("TOP_P", 0.6)),
-    'repetition_penalty': float(os.getenv("REP_PENALTY", 1.2)),
-    'do_sample': bool(os.getenv("DO_SAMPLE", True))
+    "temperature": max(float(os.getenv("TEMPERATURE", 0.9)), 1e-2),
+    "max_new_tokens": int(os.getenv("MAX_NEW_TOKENS", 256)),
+    "top_p": float(os.getenv("TOP_P", 0.6)),
+    "repetition_penalty": float(os.getenv("REP_PENALTY", 1.2)),
+    "do_sample": bool(os.getenv("DO_SAMPLE", True)),
 }
 
 OAI_GENERATE_KWARGS = {
-    'temperature': max(float(os.getenv("TEMPERATURE", 0.9)), 1e-2),
-    'max_tokens': int(os.getenv("MAX_NEW_TOKENS", 256)),
-    'top_p': float(os.getenv("TOP_P", 0.6)),
-    'frequency_penalty': max(-2, min(float(os.getenv("FREQ_PENALTY", 0)), 2))
+    "temperature": max(float(os.getenv("TEMPERATURE", 0.9)), 1e-2),
+    "max_tokens": int(os.getenv("MAX_NEW_TOKENS", 256)),
+    "top_p": float(os.getenv("TOP_P", 0.6)),
+    "frequency_penalty": max(-2, min(float(os.getenv("FREQ_PENALTY", 0)), 2)),
 }
+
 
 def format_prompt(message: str, api_kind: str):
     """
@@ -44,7 +44,7 @@ def format_prompt(message: str, api_kind: str):
         str: Formatted message after applying the chat template.
     """
 
-    messages: List[Dict[str, Any]] = [{'role': 'user', 'content': message}]
+    messages: List[Dict[str, Any]] = [{"role": "user", "content": message}]
 
     if api_kind == "openai":
         return messages
@@ -52,6 +52,7 @@ def format_prompt(message: str, api_kind: str):
         return TOKENIZER.apply_chat_template(messages, tokenize=False)
     else:
         raise ValueError("API is not supported")
+
 
 def generate_hf(prompt: str) -> Generator[str, None, str]:
     """
@@ -74,7 +75,7 @@ def generate_hf(prompt: str) -> Generator[str, None, str]:
             **HF_GENERATE_KWARGS,
             stream=True,
             details=True,
-            return_full_text=False
+            return_full_text=False,
         )
         output = ""
         for response in stream:
@@ -85,7 +86,9 @@ def generate_hf(prompt: str) -> Generator[str, None, str]:
         if "Too Many Requests" in str(e):
             raise gr.Error(f"Too many requests: {str(e)}")
         elif "Authorization header is invalid" in str(e):
-            raise gr.Error("Authentication error: HF token was either not provided or incorrect")
+            raise gr.Error(
+                "Authentication error: HF token was either not provided or incorrect"
+            )
         else:
             raise gr.Error(f"Unhandled Exception: {str(e)}")
 
@@ -102,13 +105,13 @@ def generate_openai(prompt: str) -> Generator[str, None, str]:
                                    Returns a final string if an error occurs.
     """
     formatted_prompt = format_prompt(prompt, "openai")
-    
+
     try:
         stream = OAI_CLIENT.chat.completions.create(
             model=os.getenv("OPENAI_MODEL"),
             messages=formatted_prompt,
             **OAI_GENERATE_KWARGS,
-            stream=True
+            stream=True,
         )
         output = ""
         for chunk in stream:
@@ -120,6 +123,8 @@ def generate_openai(prompt: str) -> Generator[str, None, str]:
         if "Too Many Requests" in str(e):
             raise gr.Error("ERROR: Too many requests on OpenAI client")
         elif "You didn't provide an API key" in str(e):
-            raise gr.Error("Authentication error: OpenAI key was either not provided or incorrect")
+            raise gr.Error(
+                "Authentication error: OpenAI key was either not provided or incorrect"
+            )
         else:
             raise gr.Error(f"Unhandled Exception: {str(e)}")
