@@ -1,6 +1,5 @@
 import os
 import logging
-from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 from time import perf_counter
 
@@ -8,6 +7,7 @@ import gradio as gr
 
 from backend.query_llm import generate_openai, generate_hf
 from backend.semantic_search import retrieve
+from backend.embedder import embedder
 
 
 logging.basicConfig(level=logging.INFO)
@@ -15,11 +15,11 @@ logger = logging.getLogger(__name__)
 
 TOP_K = int(os.getenv("TOP_K", 4))
 
-#proj_dir = Path(__file__).parent
-env = Environment(loader=FileSystemLoader('./templates'))
+env = Environment(loader=FileSystemLoader("./templates"))
 
-template = env.get_template('template.j2')
-template_html = env.get_template('template_html.j2')
+template = env.get_template("template.j2")
+template_html = env.get_template("template_html.j2")
+
 
 def add_text(history, text):
     history = [] if history is None else history
